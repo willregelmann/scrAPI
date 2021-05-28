@@ -1,0 +1,8 @@
+RewriteEngine   On
+
+RewriteRule     ^([a-z]+)/$                                 $1/$1.php                                               [NC,END,QSA]
+RewriteRule     ^([a-z]+)/([^/]+)$                          $1/$1.php?id=$2                                         [NC,END,QSA]
+RewriteRule     ^([a-z]+)/([^/]+)/$                         $1/$2.php                                               [NC,END,QSA]
+RewriteRule     ^([a-z]+)/([^/]+)/([^/]+)$                  $1/$2.php?id=$3                                         [NC,END,QSA]
+
+RewriteRule     ^.*$                                        ../error.php                                            [R=400]
