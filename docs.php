@@ -1,25 +1,15 @@
 <?php
-namespace wregelmann\EzAPI;
+namespace scrAPI;
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once __DIR__."/../includes/common.php";
-
-$json_options = [
-    JSON_PRETTY_PRINT,
-    JSON_UNESCAPED_SLASHES,
-    JSON_INVALID_UTF8_SUBSTITUTE
-];    
+require_once __DIR__."/common.php";
 
 $doc = [
     "openapi" => "3.0.0",
     "info" => [
-        "title" => "Watch Communications Cortex",
-        "version" => "1.0.0",
-        "contact" => [
-            "email" => "sysops@watchcomm.net"
-        ]
+        "title" => $_ENV["appname"] ?? "scrAPI"
     ],
     "servers" => [
         [
@@ -37,22 +27,33 @@ $doc = [
     ]
 ];
 
-foreach (scan_recursively(__DIR__."/endpoints") as $handle) {
-    include_once $handle;
+foreach ([...scan_recursively(__DIR__."/Collections"), ...scan_recursively(__DIR__."/Schemas")] as $handle) {
+    include_once ($handle);
 }
-foreach (get_declared_classes() as $class) {
-    $reflection = new \ReflectionClass($class);
-    if ($reflection->getNamespaceName() == "wregelmann\EzAPI") {
-        if ($reflection->getAttributes(Schema::class)) { 
-            parseSchema($reflection);
-        }
-    }
-    foreach ($reflection->getMethods() as $method) {
+
+$collections = array_filter(get_declared_classes(), fn($class) => preg_match('/^scrAPI\\\\Collections\\\\/', $class));
+$schemas = array_filter(get_declared_classes(), fn($class) => preg_match('/^scrAPI\\\\Schemas\\\\/', $class));
+
+foreach ($collections as $collection) {
+    foreach ((new \ReflectionClass($collection))->getMethods() as $method) {
         if ($method->getAttributes(Method::class)) {
             parseMethod($method);
         }
     }
 }
+
+foreach ($schemas as $schema) {
+    parseSchema(new \ReflectionClass($schema));
+}
+
+echo json_encode(
+        $doc, 
+        JSON_PRETTY_PRINT |
+        JSON_UNESCAPED_SLASHES |
+        JSON_INVALID_UTF8_SUBSTITUTE
+    );
+
+
 
 function parseSchema(\ReflectionClass $reflection) {
     global $doc;
@@ -73,14 +74,15 @@ function parseSchema(\ReflectionClass $reflection) {
 
 function parseMethod(\ReflectionMethod $method) {
     global $doc;
+    preg_match(sprintf('/^%s%s(.*)\.php$/', str_replace('/', '\/', $_SERVER['DOCUMENT_ROOT']), str_replace('/', '\/', $_SERVER['REQUEST_URI'])), $method->getDeclaringClass()->getFileName(), $matches);
     $path = sprintf(
-            "%s%s",
-            getPath($method->getDeclaringClass()->getFileName()),
-            $method->getAttributes(Method::class) ? $method->getAttributes(Method::class)[0]->getArguments()[1] ?? "" : ""
+            "/%s%s",
+            $matches[1],
+            $method->getAttributes(Method::class) ? '/'.$method->getAttributes(Method::class)[0]->getArguments()[1] ?? "" : ""
         );
     $doc["paths"][$path] ??= [];
     $doc["paths"][$path][strtolower($method->getAttributes(Method::class)[0]->getArguments()[0])] = [
-        "type" => preg_match("/^Cortex\\\\API\\\\(.+)/", $method->getReturnType()?->getName(), $matches) ? 
+        "type" => preg_match("/^scrAPI\\\\Collections\\\\(.+)/", $method->getReturnType()?->getName(), $matches) ? 
             sprintf("#/components/schemas/%s", $matches[1]) :
             $method->getReturnType()?->getName(),
         "summary" => isset($method->getAttributes(Summary::class)[0]) ? $method->getAttributes(Summary::class)[0]?->getArguments()[0] : null
@@ -97,7 +99,7 @@ function parseMethod(\ReflectionMethod $method) {
 function parseMethodParameters(\ReflectionMethod $method, &$path) {
     $return = [];
     foreach ($method->getParameters() as $param) {
-        $schema = preg_match("/^Cortex\\\\API\\\\(.+)/", $param->getType()->getName(), $matches) ?
+        $schema = preg_match("/^scrAPI\\\\Collections\\\\(.+)/", $param->getType()->getName(), $matches) ?
                 ["\$ref" => sprintf("#/components/schemas/%s", $matches[1])] :
                 ["type" => $param->getType()->getName()];
         if (isset($param->getAttributes(In::class)[0]) && strtolower($param->getAttributes(In::class)[0]?->getArguments()[0]) == "body") {
@@ -131,26 +133,6 @@ function parseMethodParameters(\ReflectionMethod $method, &$path) {
     }
     return $return;
 }
-
-function getPath($handle) {
-    preg_match(
-        sprintf(
-            "/%s%s(([a-z0-9_\-]*)(\/(.*))?)\.php$/i",
-            str_replace("/", "\/", $_SERVER["CONTEXT_DOCUMENT_ROOT"]),
-            str_replace("/", "\/", $_SERVER["REQUEST_URI"])
-        ),
-        $handle,
-        $matches
-    );
-    return sprintf("/%s/", $matches[2] == $matches[4] ? $matches[2] : $matches[1]);
-}
-
-echo json_encode($doc, array_reduce(
-        $json_options, 
-        function($a, $b) {
-            return $a | $b;
-        }
-    ));
 
 function scan_recursively($directory){
     $return = [];
