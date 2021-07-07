@@ -53,8 +53,6 @@ echo json_encode(
         JSON_INVALID_UTF8_SUBSTITUTE
     );
 
-
-
 function parseSchema(\ReflectionClass $reflection) {
     global $doc;
     $doc["components"]["schemas"][$reflection->getShortName()] = [

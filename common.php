@@ -9,7 +9,7 @@ define("PATTERN_ALPHANUMERIC", "/^[a-z0-9]+$/i");
 define("PATTERN_ALPHANUMERIC_SPACES", "/^[a-z0-9\s]+$/i");
 define("PATTERN_ANY", "/^[\s\S]*$/");
 
-spl_autoload_register(function (string $class_name) {
+spl_autoload_register(function (string $class_name):void {
     $components = array_filter(explode('\\', $class_name));
     if ($components[0] == 'scrAPI') {
         array_shift($components);

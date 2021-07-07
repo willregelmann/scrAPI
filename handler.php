@@ -18,7 +18,11 @@ while (count($request_components)) {
     }
 }
 
-isset($class_name) ?: die(new Response(code: 404, status: "error", data: "requested collection not found"));
+isset($class_name) ?: die(new Response(
+        code: 404,
+        status: "error",
+        data: "requested collection not found"
+    ));
 
 $verb_matched = false;
 foreach ((new \ReflectionClass($class_name))->getMethods() as $method) {
