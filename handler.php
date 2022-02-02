@@ -3,19 +3,22 @@ namespace scrAPI;
 
 require_once __DIR__.'/common.php';
 
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+
 $base_path = preg_replace('/\/handler\.php$/', '', $_SERVER['SCRIPT_NAME']);
-$request_path = preg_replace(sprintf('/^%s/', str_replace('/', '\/', $base_path)), '', $_SERVER["REDIRECT_URL"]);
+$request_path = explode('?',preg_replace(sprintf('/^%s/', str_replace('/', '\/', $base_path)), '', $_SERVER["REQUEST_URI"]))[0];
 $request_components = array_filter(explode('/', $request_path));
 
 $path = __DIR__.'/Collections';
 
 while (count($request_components)) {
-    $location = array_shift($request_components);
-    $path .= '/'.$location;
-    if (file_exists($path.'.php')) {
-        $class_name = '\scrAPI\Collections\\'.$location;
+    $test_path = $path.'/'.implode('/', $request_components);
+    if (file_exists($test_path.'.php')) {
+        $class_name = '\scrAPI\Collections\\'.implode('\\', $request_components);
         break;
     }
+    array_pop($request_components);
 }
 
 $data_type = match (true) {
@@ -41,7 +44,7 @@ foreach ((new \ReflectionClass($class_name))->getMethods() as $method) {
         }
         $verb_matched = true;
         $pattern = isset($arguments[1]) ? preg_replace('/\{\w+\}/', '([^\/]+)', $arguments[1]) : '';
-        if (preg_match('/^'.$pattern.'$/', implode('/', $request_components), $path_parameter_values)) {
+        if (preg_match('/^'.$pattern.'$/', ltrim($request_path, '/'.implode('/', $request_components)), $path_parameter_values)) {
             $method_name = $method->getName();
             $method_parameters = $method->getParameters();
             isset($arguments[1]) && preg_match('/\{(\w+)\}/', $arguments[1], $path_parameter_keys);
@@ -62,6 +65,7 @@ if (!isset($method_name)) {
 }
 
 $request_parameters = array_merge($path_parameters, $_REQUEST);
+bluelog($_REQUEST);
 foreach ($method_parameters as $parameter) {
     $key = $parameter->getName();
     if (isset($request_parameters[$key])) {

@@ -15,11 +15,16 @@ spl_autoload_register(function (string $class_name):void {
         array_shift($components);
     }
     try {
-        include_once __DIR__.'/'.implode('/', $components).'.php';
+        @include_once __DIR__.'/'.implode('/', $components).'.php';
     } catch (\Exception) {}
+    try {
+        @include_once $_SERVER['DOCUMENT_ROOT'].'/includes/'.array_pop($components).'.php';
+    } catch (\Exception) {}
+    
 });
     
-function map_properties($from, object &$to, bool $strict = false):?object {
+function map_properties($from, ?object &$to = null, ?string $class = null, bool $strict = false):?object {
+    $to ??= new $class;
     foreach ($from as $key=>$value) {
         $property_exists = in_array($key, array_keys(
                 get_class_vars(get_class($to))
@@ -29,4 +34,13 @@ function map_properties($from, object &$to, bool $strict = false):?object {
         }
     }
     return $to;
+}
+
+function bluelog($obj, string $title = null) {
+    $title ??= 'BLUELOG';
+    error_log(sprintf("\n\033[0;36m%s\n%s\n%s\033[0m\n",
+        '----'.$title.'----',
+        print_r($obj, true),
+        str_repeat('-', strlen($title)+8)
+    ));
 }

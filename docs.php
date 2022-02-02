@@ -72,7 +72,7 @@ function parseSchema(\ReflectionClass $reflection) {
 
 function parseMethod(\ReflectionMethod $method) {
     global $doc;
-    preg_match(sprintf('/^%s%s(.*)\.php$/', str_replace('/', '\/', $_SERVER['DOCUMENT_ROOT']), str_replace('/', '\/', $_SERVER['REQUEST_URI'])), $method->getDeclaringClass()->getFileName(), $matches);
+    preg_match(sprintf('/^%s%sCollections\/(.*)\.php$/', str_replace('/', '\/', $_SERVER['DOCUMENT_ROOT']), str_replace('/', '\/', $_SERVER['REQUEST_URI'])), $method->getDeclaringClass()->getFileName(), $matches);
     $path = sprintf(
             "/%s%s",
             $matches[1],
@@ -137,7 +137,7 @@ function scan_recursively($directory){
     $files = array_diff(scandir($directory), ["..", "."]);
     foreach ($files as $file) {
         $name = sprintf("%s/%s", $directory, $file);
-        if (is_dir($file)) {
+        if (is_dir($name)) {
             array_push($return, ...scan_recursively($name));
         } else if (preg_match("/\.php$/", $file) && $name != $_SERVER["SCRIPT_FILENAME"]) {
             array_push($return, $name);
