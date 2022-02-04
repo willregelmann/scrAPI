@@ -8,7 +8,7 @@ ScrAPI is a framework for implementing self-documenting, highly extensible REST 
 
 ## Adding Collections
 
-ScrAPI works with "Collections", which are individual classes representing API endpoints. The behavior of HTTP requests to a Collection is defined by attributes on specific methods. The Method() attribute takes an HTTP verb as an argument, and optionally a relative request path. For example, `Method('GET')` specifies that the method should be called when an HTTP GET request is made to the endpoint (`{base uri}/{endpoint}/`). `Method('GET', '{id}')` indicates that the method should be called when an HTTP GET request is made to `{base uri}/{endpoint}/{some id}`, with the ID being passed to that method automatically. Method names are arbitrary: only the Method attribute is checked. 
+ScrAPI works with "Collections", which are individual classes representing API endpoints. The behavior of HTTP requests to a Collection is defined by attributes on static methods. The Method() attribute takes an HTTP verb as an argument, and optionally a relative request path. For example, `Method('GET')` specifies that the method should be called when an HTTP GET request is made to the endpoint (`{base uri}/{endpoint}/`). `Method('GET', '{id}')` indicates that the method should be called when an HTTP GET request is made to `{base uri}/{endpoint}/{some id}`, with the ID being passed to that method automatically. Method names are arbitrary: only the Method attribute is checked. 
 
 Collections are subject to the following rules:
 - The Collection class name should match the file name exactly
