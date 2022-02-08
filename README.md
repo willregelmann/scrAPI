@@ -92,3 +92,5 @@ Nginx:
 rewrite ^/api/?$    /api/docs.php     last;
 rewrite ^/api/(.*)$ /api/handler.php  last;
 ```
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
